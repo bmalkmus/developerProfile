@@ -3,22 +3,22 @@ let fs = require('fs');
 let axios = require ('axios');
 let inquirer = require ('inquirer');
 
-inquirer.prompt(
+inquirer.prompt([
     {
       message: "Enter your GitHub username",
       name: "username",
     },
     { 
       message:"What is your favorite color?",
-      name: "favoriteColor"
+      name: "favoriteColor",
     },
-)
+  ])
 .then(function({ username }) {
     const profile = new PDFDocument({compress:false});
     const queryUrl = `https://api.github.com/users/${username}`
     axios.get(queryUrl)
       .then(function(response){
-        console.log(response);
+        // console.log(response);
 
         profile.pipe(fs.createWriteStream(`profile.pdf`));
 
@@ -29,7 +29,12 @@ inquirer.prompt(
           //  .font('Times Roman')
            .fontSize(30)
            .text(response.data.name, 180, 50);
-          //  .image(response.data.avatar_url, 400, 150);
+
+           axios.get(response.data.avatar_url, {responseType: 'arraybuffer'}).then(reply => {
+            const pngBuffer = Buffer.from(reply.data);
+            profile.image(pngBuffer, 195, 100, {width: 150, height: 150,});
+
+          });
 
         profile 
         .fontSize(12)
@@ -56,7 +61,7 @@ inquirer.prompt(
 
         axios.get("https://api.github.com/users/"+username+"/repos?client_id=${}&client_secret=${}")
           .then(function(result){
-            console.log(result.data.length);
+            console.log(result);
             profile.text (`GitHub Stars: ${result.data.length}`, 375, 600);
             profile.end();
           });
